@@ -5,7 +5,7 @@ Simple boilerplate based on [dverbovyis](https://github.com/dverbovyi) [gist](ht
 # Prerequisite
 You need do have [`gulp-cli`](https://github.com/gulpjs/gulp-cli) somewhere installed
 
-Download the ZIP file and change into the directory and run
+Download the [ZIP file](https://github.com/pixelkritzel/gulp_es6_sass_boilerplate/archive/master.zip) and change into the directory and run
 ```
 npm install
 $PATH_TO_GULP/gulp run
