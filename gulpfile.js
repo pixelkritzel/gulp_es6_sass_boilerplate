@@ -18,10 +18,16 @@ var entryPoint = './src/scripts/index.js',
     htmlWatchPath = './**/*.html';
 /**/
 
+function handleError(err) {
+  console.log(err.toString());
+  this.emit('end');
+}
+
 gulp.task('js', function () {
     return browserify(entryPoint, {debug: true, extensions: ['es6']})
         .transform("babelify")
         .bundle()
+        .on('error', handleError)
         .pipe(source('bundle.js'))
         .pipe(buffer())
         .pipe(sourcemaps.init({loadMaps: true}))
