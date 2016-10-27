@@ -12,7 +12,12 @@ var webpack = require('webpack-stream'),
     gulpHandlebars = require('gulp-handlebars-html')(handlebars),
     rename = require('gulp-rename'),
     yaml = require('js-yaml'),
-    fs   = require('fs');
+    fs   = require('fs'),
+    inject = require('gulp-inject'),
+    uglify = require('gulp-uglify'),
+    del = require('del'),
+    cleanCSS = require('gulp-clean-css'),
+    favicons = require('gulp-favicons');
 
 /* pathConfig*/
 var entryPoint = './src/scripts/index.js',
@@ -24,6 +29,8 @@ var entryPoint = './src/scripts/index.js',
     yamlWatchPath = './src/data/**/*.yaml',
     staticPath = './src/static';
 /**/
+// First of all delete any old build directory
+del.sync(browserDir);
 
 gulp.task('browser-sync', function () {
     const config = {
@@ -31,6 +38,36 @@ gulp.task('browser-sync', function () {
     };
 
     return browserSync(config);
+});
+
+gulp.task('favicons', function () {
+    return gulp.src('./favicon.png').pipe(favicons({
+        appName: 'Gulp Boilerplate',
+        developerName: 'Timo Zoeller',
+        background: '#020307',
+        path: 'favicons/',
+        display: 'standalone',
+        orientation: 'portrait',
+        start_url: '/?homescreen=1',
+        version: 1.0,
+        logging: false,
+        online: false,
+        html: '../favicons.html',
+        pipeHTML: true,
+        replace: true
+    }))
+    .pipe(gulp.dest(`${browserDir}/favicons`));
+});
+
+gulp.task('inject-favicon', ['favicons', 'hbs'], function() {
+  gulp.src(`${browserDir}/index.html`)
+  .pipe(inject(gulp.src([`${browserDir}/favicons.html`]), {
+    starttag: '<!-- inject:head:html -->',
+    transform: function(filePath, file) {
+      return file.contents.toString('utf8'); // return file contents as string
+    }
+  }))
+  .pipe(gulp.dest(browserDir));
 });
 
 gulp.task('hbs', () => {
@@ -56,10 +93,9 @@ gulp.task('hbs', () => {
 });
 
 gulp.task('js', function () {
-
     return gulp.src(entryPoint)
                .pipe(webpack({
-                    watch: true,
+                    watch: false,
                     devtool: 'source-map',
                     module: {
                         loaders: [
@@ -102,4 +138,25 @@ gulp.task('watch', function () {
     });
 });
 
+gulp.task('compress-js', ['js'], function () {
+  fs.rename(`${browserDir}/scripts/bundle.js`, `${browserDir}/scripts/bundle.tmp.js`, err => err && console.log(err));
+  return gulp.src(`${browserDir}/scripts/bundle.tmp.js`)
+             .pipe(uglify())
+             .pipe(rename('bundle.js'))
+             .pipe(gulp.dest(`${browserDir}/scripts`));
+});
+
+gulp.task('compress-css', ['sass'], function () {
+  fs.rename(`${browserDir}/styles/style.css`, `${browserDir}/styles/style.tmp.css`, err => err && console.log(err));
+  return gulp.src(`${browserDir}/styles/style.tmp.css`)
+             .pipe(cleanCSS())
+             .pipe(rename('style.css'))
+             .pipe(gulp.dest(`${browserDir}/styles`));
+});
+
+gulp.task('cleanup', ['compress-js', 'inject-favicon'], () => 
+    del([`${browserDir}/scripts/bundle.tmp.js`, `${browserDir}/scripts/bundle.js.map`, `${browserDir}/favicons.html`, `${browserDir}/styles/style.tmp.css`])
+);
+
 gulp.task('run', ['hbs', 'js', 'sass', 'copyStatic', 'watch', 'browser-sync']);
+gulp.task('build', ['hbs', 'favicons', 'inject-favicon', 'js', 'compress-js', 'sass', 'compress-css', 'copyStatic', 'cleanup']);
