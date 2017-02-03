@@ -1,1 +1,3 @@
-document.querySelector('body').style.backgroundColor = 'yellow';
+import color from './color';
+
+document.querySelector('body').style.backgroundColor = color;

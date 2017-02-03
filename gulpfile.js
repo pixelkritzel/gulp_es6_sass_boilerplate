@@ -20,7 +20,7 @@ var webpack = require('webpack-stream'),
     favicons = require('gulp-favicons');
 
 /* pathConfig*/
-var entryPoint = './src/scripts/index.js',
+var entryPoint = './src/scripts/index.',
     browserDir = './build',
     sassWatchPath = './src/styles/**/*.scss',
     jsWatchPath = './src/scripts/**/*.js',
@@ -93,14 +93,24 @@ gulp.task('hbs', () => {
 });
 
 gulp.task('js', function () {
-    return gulp.src(entryPoint)
+    let extension = ''
+    extension = fs.existsSync(entryPoint + 'js') ? 'js' : extension;
+    extension = fs.existsSync(entryPoint + 'ts') ? 'ts' : extension;
+    let loaders = [];
+    if (extension === 'js') {
+        loaders.push({ test: /\.jsx?$/, loader: 'babel' });
+    } else if (extension === 'ts') {
+        loaders.push({ test: /\.tsx?$/, loader: 'ts-loader'});
+    }
+    return gulp.src(entryPoint + extension)
                .pipe(webpack({
-                    watch: false,
+                    watch: true,
                     devtool: 'source-map',
+                    resolve: {
+                        extensions: ['', '.ts', '.tsx', '.js', '.jsx']
+                    },
                     module: {
-                        loaders: [
-                            { test: /\.js$/, loader: 'babel' },
-                        ],
+                        loaders: loaders
                     },
                     output: {
                         filename: 'bundle.js'
